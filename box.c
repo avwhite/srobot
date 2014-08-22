@@ -10,47 +10,47 @@ Box createBox(float w, float h, float d)
 	d /= 2;
 
 	GLfloat g_vertex_buffer_data[] = {
-		w, h, d, // left face
-		w, h, -d,
-		w, -h, d,
-		w, h, -d,
-		w, -h, d,
-		w, -h, -d,
+		w, h, d, 1, 0, 0,  //right face
+		w, h, -d, 1, 0, 0,
+		w, -h, d, 1, 0, 0,
+		w, h, -d, 1, 0, 0,
+		w, -h, d, 1, 0, 0,
+		w, -h, -d, 1, 0, 0,
 
-		-w, h, d, //right face
-		-w, h, -d,
-		-w, -h, d,
-		-w, h, -d,
-		-w, -h, d,
-		-w, -h, -d,
+		-w, h, d, -1, 0, 0,//left face
+		-w, h, -d, -1, 0, 0,
+		-w, -h, d, -1, 0, 0,
+		-w, h, -d, -1, 0, 0,
+		-w, -h, d, -1, 0, 0,
+		-w, -h, -d, -1, 0, 0,
 
-		w, h, d, //up face
-		w, h, -d,
-		-w, h, d,
-		w, h, -d,
-		-w, h, d,
-		-w, h, -d,
+		w, h, d, 0, 1, 0, //up face
+		w, h, -d, 0, 1, 0,
+		-w, h, d, 0, 1, 0,
+		w, h, -d, 0, 1, 0,
+		-w, h, d, 0, 1, 0,
+		-w, h, -d, 0, 1, 0,
 
-		w, -h, d, //down face
-		w, -h, -d,
-		-w, -h, d,
-		w, -h, -d,
-		-w, -h, d,
-		-w, -h, -d,
+		w, -h, d, 0, -1, 0, //down face
+		w, -h, -d, 0, -1, 0,
+		-w, -h, d, 0, -1, 0,
+		w, -h, -d, 0, -1, 0,
+		-w, -h, d, 0, -1, 0,
+		-w, -h, -d, 0, -1, 0,
 
-		w,h,d, //front face
-		w,-h,d,
-		-w,h,d,
-		w,-h,d,
-		-w,h,d,
-		-w,-h,d,
+		w,h,d, 0, 0, 1, //front face
+		w,-h,d, 0, 0, 1,
+		-w,h,d, 0, 0, 1,
+		w,-h,d, 0, 0, 1,
+		-w,h,d, 0, 0, 1,
+		-w,-h,d, 0, 0, 1,
 
-		w,h,-d, //back face
-		w,-h,-d,
-		-w,h,-d,
-		w,-h,-d,
-		-w,h,-d,
-		-w,-h,-d
+		w,h,-d, 0, 0, -1,//back face
+		w,-h,-d, 0, 0, -1,
+		-w,h,-d, 0, 0, -1,
+		w,-h,-d, 0, 0, -1,
+		-w,h,-d, 0, 0, -1,
+		-w,-h,-d, 0, 0, -1
 	};
 
 	GLfloat g_color_buffer_data[12*3*3];
@@ -87,14 +87,25 @@ void renderBox(Box* box)
 	   3,                  // size
 	   GL_FLOAT,           // type
 	   GL_FALSE,           // normalized?
-	   0,                  // stride
+	   sizeof(GLfloat)*6,                  // stride
 	   (void*)0            // array buffer offset
 	);
 
 	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, box->color_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, box->vertex_buffer);
 	glVertexAttribPointer(
 	   1,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+	   3,                  // size
+	   GL_FLOAT,           // type
+	   GL_FALSE,           // normalized?
+	   sizeof(GLfloat)*6,                  // stride
+	   (void *)(sizeof(GLfloat)*3)            // array buffer offset
+	);
+
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, box->color_buffer);
+	glVertexAttribPointer(
+	   2,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
 	   3,                  // size
 	   GL_FLOAT,           // type
 	   GL_FALSE,           // normalized?
@@ -106,6 +117,7 @@ void renderBox(Box* box)
 	 
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(3);
 }
 
 void getBoxModelMatrix(Box *box, mat4x4 m)
