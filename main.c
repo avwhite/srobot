@@ -50,6 +50,7 @@ int main(){
 	Box box;
 	EntityList entities;
 	mat4x4 proj, view, model, temp, MVP;
+	vec3 lightPos = {0,10,0};
 	int i;
 
 	window = init_window();
@@ -62,14 +63,16 @@ int main(){
 	entities = createEntityList(5);
 
 	box = createBox(1,1,1);
-	box.x = 2;
 	insertEntity(&entities, &box);
 	box = createBox(0.5, 2, 0.5);
 	box.z = -1;
 	insertEntity(&entities, &box);
 
 	GLuint programID = LoadShaders( "vertex_shader.glsl", "fragment_shader.glsl" );
-	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
+	GLuint mvpID = glGetUniformLocation(programID, "MVP");
+	GLuint mID = glGetUniformLocation(programID, "M");
+	GLuint vID = glGetUniformLocation(programID, "V");
+	GLuint lightPosID = glGetUniformLocation(programID, "lightPosition_worldspace");
 
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 	glEnable(GL_DEPTH_TEST);
@@ -90,12 +93,16 @@ int main(){
 		updateControlMatrices(window, view, proj);
 		mat4x4_mul(temp, proj, view);
 
+		glUniformMatrix4fv(vID, 1, GL_FALSE, view);
+		glUniform3f(lightPosID, lightPos[0], lightPos[1], lightPos[2]);
+
 		for (i = 0; i < entities.length; ++i) {
 			Box *b = getEntity(&entities, i);
 
 			getBoxModelMatrix(b, model);
 			mat4x4_mul(MVP, temp, model);
-			glUniformMatrix4fv(MatrixID, 1, GL_FALSE, MVP);
+			glUniformMatrix4fv(mvpID, 1, GL_FALSE, MVP);
+			glUniformMatrix4fv(mID, 1, GL_FALSE, model);
 
 			renderBox(b);
 		}
