@@ -47,7 +47,7 @@ int main(){
 	printf("list created");
 
 	GLFWwindow* window;
-	Box box;
+	Box *box;
 	EntityList entities;
 	mat4x4 proj, view, model, temp, MVP;
 	vec3 lightPos = {0,10,0};
@@ -62,11 +62,8 @@ int main(){
 
 	entities = createEntityList(5);
 
-	box = createBox(1,1,1);
-	insertEntity(&entities, &box);
-	box = createBox(0.5, 2, 0.5);
-	box.z = -1;
-	insertEntity(&entities, &box);
+	box = createBox(&entities, 1,1,1,2,0,0);
+	box = createBox(&entities, 0.5, 2, 0.5,0,0,-2);
 
 	GLuint programID = LoadShaders( "vertex_shader.glsl", "fragment_shader.glsl" );
 	GLuint mvpID = glGetUniformLocation(programID, "MVP");
@@ -78,10 +75,15 @@ int main(){
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	
-	initControls();
-	updateControlMatrices(window, view, proj);
+	float lastTime, currentTime, deltaTime;
+
+	lastTime = glfwGetTime();
 
 	do{
+		currentTime  = glfwGetTime();
+		deltaTime = currentTime - lastTime;
+		lastTime = currentTime;
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Use our shader
@@ -90,7 +92,8 @@ int main(){
 		// in the "MVP" uniform
 		// For each model you render, since the MVP will be different (at least the M part)
 		
-		updateControlMatrices(window, view, proj);
+		updateBoxes(&entities, deltaTime);
+		updateControlMatrices(window, deltaTime, view, proj);
 		mat4x4_mul(temp, proj, view);
 
 		glUniformMatrix4fv(vID, 1, GL_FALSE, view);
@@ -110,6 +113,7 @@ int main(){
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
 	 
 	} // Check if the ESC key was pressed or the window was closed
 	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&

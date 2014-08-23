@@ -3,7 +3,7 @@
 #include<stdlib.h>
 #include"linmath.h"
 
-Box createBox(float w, float h, float d)
+Box *createBox(EntityList *e, float w, float h, float d, float x, float y, float z)
 {
 	w /= 2;
 	h /= 2;
@@ -62,9 +62,7 @@ Box createBox(float w, float h, float d)
 	}
 
 	Box box;
-	box.x = 0;
-	box.y = 0;
-	box.z = 0;
+	dMass m;
 
 	GLuint colorbuffer;
 	glGenBuffers(1, &(box.color_buffer));
@@ -75,7 +73,20 @@ Box createBox(float w, float h, float d)
 	glBindBuffer(GL_ARRAY_BUFFER, box.vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
-	return box;
+	box.body = dBodyCreate(e->physics);
+	dMassSetZero(&m);
+	dMassSetBoxTotal(&m,1.0,w,h,d);
+
+	dBodySetPosition(box.body, x,  y, z);
+
+	if (e->length == e->cap) {
+		e->cap *= 2;
+		e->entities = realloc(e->entities, sizeof(Box) * e->cap);
+	}
+	e->entities[e->length] = box;
+	e->length += 1;
+
+	return &e->entities[e->length-1];
 }
 
 void renderBox(Box* box)
@@ -122,7 +133,9 @@ void renderBox(Box* box)
 
 void getBoxModelMatrix(Box *box, mat4x4 m)
 {
-	mat4x4_translate(m, box->x, box->y, box->z);
+	const dReal *pos;
+	pos = dBodyGetPosition(box->body);
+	mat4x4_translate(m, pos[0], pos[1], pos[2]);
 }
 
 void deleteBox(Box* box)
@@ -137,6 +150,9 @@ EntityList createEntityList(int initCap)
 	e.entities = malloc(sizeof(Box)*initCap);
 	e.length = 0;
 	e.cap = initCap;
+	dInitODE();
+	e.physics = dWorldCreate();
+	dWorldSetGravity(e.physics, 0, -0.01, 0);
 	return e;
 }
 
@@ -165,7 +181,13 @@ void deleteEntityList(EntityList *e)
 	for (i = 0; i < e->length; ++i) {
 		deleteBox(&(e->entities[i]));
 	}
+	dWorldDestroy(e->physics);
 	free(e->entities);
 	e->cap = 0;
 	e->length = 0;
+}
+
+void updateBoxes(EntityList *e, float deltaTime)
+{
+	dWorldStep(e->physics,  0.05);
 }

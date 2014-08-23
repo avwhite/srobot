@@ -9,24 +9,13 @@ float initialFov = 0.78f;
 float speed = 3.0f;
 float mouseSpeed = 0.005f;
 
-double lastTime;
-
-void initControls() {
-	lastTime = glfwGetTime();
-}
-
-void updateControlMatrices(GLFWwindow* window, mat4x4 viewMatrix, mat4x4 projMatrix) {
-	double currentTime;
-	float deltaTime;
+void updateControlMatrices(GLFWwindow* window, float deltaTime, mat4x4 viewMatrix, mat4x4 projMatrix) {
 
 	double xpos, ypos;
 	float fov;
 
 	vec3 temp;
 	vec3 direction, right, up, lookAt;
-
-	currentTime = glfwGetTime();
-	deltaTime = (float)(currentTime - lastTime);
 
 	//glfwGetCursorPos(window, &xpos, &ypos);
 	//glfwSetCursorPos(window, 1024/2, 768/2);
@@ -90,6 +79,4 @@ void updateControlMatrices(GLFWwindow* window, mat4x4 viewMatrix, mat4x4 projMat
 		lookAt,
 		up
 	);
-
-	lastTime = currentTime;
 }

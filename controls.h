@@ -6,7 +6,6 @@
 
 void getViewMatrix(mat4x4 m);
 void getProjectionMatrix(mat4x4 m);
-void initControls();
-void updateControlMatrices(GLFWwindow* window, mat4x4 projMatrix, mat4x4 viewMatrix);
+void updateControlMatrices(GLFWwindow* window, float deltaTime, mat4x4 projMatrix, mat4x4 viewMatrix);
 
 #endif
