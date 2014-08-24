@@ -56,14 +56,17 @@ int main(){
 	window = init_window();
 	if(window == NULL) { return -1; }
 
+	dInitODE();
+
 	GLuint VertexArrayID;
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
 
 	entities = createEntityList(5);
 
-	box = createBox(&entities, 1,1,1,2,0,0);
-	box = createBox(&entities, 0.5, 2, 0.5,0,0,-2);
+	createBox(&entities, 1,1,1,2,0,0);
+	createBox(&entities, 0.5, 2, 0.5,0,0,-2);
+	createGround(&entities);
 
 	GLuint programID = LoadShaders( "vertex_shader.glsl", "fragment_shader.glsl" );
 	GLuint mvpID = glGetUniformLocation(programID, "MVP");

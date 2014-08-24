@@ -5,9 +5,14 @@
 
 Box *createBox(EntityList *e, float w, float h, float d, float x, float y, float z)
 {
+	Box box;
+	dMass m;
+
 	w /= 2;
 	h /= 2;
 	d /= 2;
+
+	box.numVerticies = 36;
 
 	GLfloat g_vertex_buffer_data[] = {
 		w, h, d, 1, 0, 0,  //right face
@@ -53,16 +58,13 @@ Box *createBox(EntityList *e, float w, float h, float d, float x, float y, float
 		-w,-h,-d, 0, 0, -1
 	};
 
-	GLfloat g_color_buffer_data[12*3*3];
+	GLfloat g_color_buffer_data[box.numVerticies*3];
 	int v;
-	for (v = 0; v < 12*3 ; v++){
+	for (v = 0; v < box.numVerticies ; v++){
 		g_color_buffer_data[3*v+0] = 0.0;
 		g_color_buffer_data[3*v+1] = 0.5;
 		g_color_buffer_data[3*v+2] = 0.0;
 	}
-
-	Box box;
-	dMass m;
 
 	GLuint colorbuffer;
 	glGenBuffers(1, &(box.color_buffer));
@@ -76,8 +78,62 @@ Box *createBox(EntityList *e, float w, float h, float d, float x, float y, float
 	box.body = dBodyCreate(e->physics);
 	dMassSetZero(&m);
 	dMassSetBoxTotal(&m,1.0,w,h,d);
-
 	dBodySetPosition(box.body, x,  y, z);
+
+	box.geom = dCreateBox(e->collision, w, h, d);
+
+	dGeomSetBody(box.geom,box.body);
+
+	if (e->length == e->cap) {
+		e->cap *= 2;
+		e->entities = realloc(e->entities, sizeof(Box) * e->cap);
+	}
+	e->entities[e->length] = box;
+	e->length += 1;
+
+	return &e->entities[e->length-1];
+}
+
+Box *createGround(EntityList *e) {
+	float w = 200;
+	float h = 0.1;
+	float d = 200;
+
+	Box box;
+
+	box.numVerticies = 6;
+
+	GLfloat g_vertex_buffer_data[] = {
+		w, h, d, 0, 1, 0, //up face
+		w, h, -d, 0, 1, 0,
+		-w, h, d, 0, 1, 0,
+		w, h, -d, 0, 1, 0,
+		-w, h, d, 0, 1, 0,
+		-w, h, -d, 0, 1, 0,
+	};
+
+	GLfloat g_color_buffer_data[box.numVerticies*3];
+	int v;
+	for (v = 0; v < box.numVerticies ; v++){
+		g_color_buffer_data[3*v+0] = 0.5;
+		g_color_buffer_data[3*v+1] = 0.5;
+		g_color_buffer_data[3*v+2] = 0.5;
+	}
+
+	GLuint colorbuffer;
+	glGenBuffers(1, &(box.color_buffer));
+	glBindBuffer(GL_ARRAY_BUFFER, box.color_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &(box.vertex_buffer));
+	glBindBuffer(GL_ARRAY_BUFFER, box.vertex_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+
+	//box.body = dBodyCreate(e->physics);
+	//dBodySetPosition(box.body, x,  y, z);
+	//dBodySetKinematic(box.body);
+
+	box.geom = dCreatePlane(e->collision,0,1,0,0);
 
 	if (e->length == e->cap) {
 		e->cap *= 2;
@@ -124,7 +180,7 @@ void renderBox(Box* box)
 	   (void*)0            // array buffer offset
 	);
 	 
-	glDrawArrays(GL_TRIANGLES, 0, 12*3);
+	glDrawArrays(GL_TRIANGLES, 0, box->numVerticies);
 	 
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
@@ -134,8 +190,13 @@ void renderBox(Box* box)
 void getBoxModelMatrix(Box *box, mat4x4 m)
 {
 	const dReal *pos;
-	pos = dBodyGetPosition(box->body);
-	mat4x4_translate(m, pos[0], pos[1], pos[2]);
+	if(dGeomGetClass(box->geom) == 4) {
+		//We are dealing with a plane, which has no position
+		mat4x4_identity(m);
+	} else {
+		pos = dGeomGetPosition(box->geom);
+		mat4x4_translate(m, pos[0], pos[1], pos[2]);
+	}
 }
 
 void deleteBox(Box* box)
@@ -150,8 +211,8 @@ EntityList createEntityList(int initCap)
 	e.entities = malloc(sizeof(Box)*initCap);
 	e.length = 0;
 	e.cap = initCap;
-	dInitODE();
 	e.physics = dWorldCreate();
+	e.collision = dHashSpaceCreate(0);
 	dWorldSetGravity(e.physics, 0, -0.01, 0);
 	return e;
 }

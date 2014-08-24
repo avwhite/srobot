@@ -1,7 +1,7 @@
 #include"controls.h"
 #include<stdio.h>
 
-vec3 position = {0, 0, 5};
+vec3 position = {0, 1, 5};
 float horizontalAngle = 3.14f;
 float verticalAngle = 0.0f;
 float initialFov = 0.78f;
