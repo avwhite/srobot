@@ -3,14 +3,15 @@
 #include<stdlib.h>
 #include"linmath.h"
 
-Box *createBox(EntityList *e, float w, float h, float d, float x, float y, float z)
+Box *createBox(EntityList *e, float wi, float he, float de, float x, float y, float z)
 {
 	Box box;
 	dMass m;
+	float w, h, d;
 
-	w /= 2;
-	h /= 2;
-	d /= 2;
+	w = wi/2;
+	h = he/2;
+	d = de/2;
 
 	box.numVerticies = 36;
 
@@ -77,10 +78,10 @@ Box *createBox(EntityList *e, float w, float h, float d, float x, float y, float
 
 	box.body = dBodyCreate(e->physics);
 	dMassSetZero(&m);
-	dMassSetBoxTotal(&m,1.0,w,h,d);
+	dMassSetBoxTotal(&m,1.0,wi,he,de);
 	dBodySetPosition(box.body, x,  y, z);
 
-	box.geom = dCreateBox(e->collision, w, h, d);
+	box.geom = dCreateBox(e->collision, wi, he, de);
 
 	dGeomSetBody(box.geom,box.body);
 
@@ -205,18 +206,6 @@ void deleteBox(Box* box)
 	glDeleteBuffers(1, &(box->color_buffer));
 }
 
-EntityList createEntityList(int initCap)
-{
-	EntityList e;
-	e.entities = malloc(sizeof(Box)*initCap);
-	e.length = 0;
-	e.cap = initCap;
-	e.physics = dWorldCreate();
-	e.collision = dHashSpaceCreate(0);
-	dWorldSetGravity(e.physics, 0, -0.01, 0);
-	return e;
-}
-
 void insertEntity(EntityList *e, Box *b)
 {
 	if (e->length == e->cap) {
@@ -236,6 +225,20 @@ Box *getEntity(EntityList *e, int index)
 	}
 }
 
+EntityList createEntityList(int initCap)
+{
+	EntityList e;
+	e.entities = malloc(sizeof(Box)*initCap);
+	e.length = 0;
+	e.cap = initCap;
+	e.physics = dWorldCreate();
+	e.collision = dHashSpaceCreate(0);
+	e.collisionJoints = dJointGroupCreate(0);
+	dWorldSetGravity(e.physics, 0, -0.01, 0);
+	return e;
+}
+
+
 void deleteEntityList(EntityList *e)
 {
 	int i;
@@ -243,6 +246,8 @@ void deleteEntityList(EntityList *e)
 		deleteBox(&(e->entities[i]));
 	}
 	dWorldDestroy(e->physics);
+	dSpaceDestroy(e->collision);
+	dJointGroupDestroy(e->collisionJoints);
 	free(e->entities);
 	e->cap = 0;
 	e->length = 0;
@@ -250,5 +255,37 @@ void deleteEntityList(EntityList *e)
 
 void updateBoxes(EntityList *e, float deltaTime)
 {
+	dSpaceCollide(e->collision, e, &nearCallback);
 	dWorldStep(e->physics,  0.05);
+	dJointGroupEmpty(e->collisionJoints);
+}
+
+void nearCallback (void *data, dGeomID o1, dGeomID o2)
+{
+	EntityList *e;
+	dBodyID b1;
+	dBodyID b2;
+	int numc;
+	dContact contact;  
+	int i;
+	
+	e = data;
+
+	b1 = dGeomGetBody(o1);
+	b2 = dGeomGetBody(o2);
+
+    contact.surface.mode = dContactBounce/* | dContactSoftCFM*/;
+    // friction parameter
+    contact.surface.mu = dInfinity;
+    // bounce is the amount of "bouncyness".
+    contact.surface.bounce = 0.9;
+    // bounce_vel is the minimum incoming velocity to cause a bounce
+    contact.surface.bounce_vel = 0.1;
+    // constraint force mixing parameter
+    //contact.surface.soft_cfm = 0.001;  
+
+	if (numc = dCollide (o1,o2,1,&contact.geom,sizeof(dContact))) {
+		dJointID c = dJointCreateContact (e->physics,e->collisionJoints,&contact);
+		dJointAttach (c,b1,b2);
+	}
 }

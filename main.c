@@ -44,13 +44,14 @@ GLFWwindow* init_window() {
 	
 
 int main(){
-	printf("list created");
-
 	GLFWwindow* window;
+
 	Box *box;
 	EntityList entities;
+
 	mat4x4 proj, view, model, temp, MVP;
 	vec3 lightPos = {0,10,0};
+
 	int i;
 
 	window = init_window();
@@ -64,8 +65,7 @@ int main(){
 
 	entities = createEntityList(5);
 
-	createBox(&entities, 1,1,1,2,0,0);
-	createBox(&entities, 0.5, 2, 0.5,0,0,-2);
+	createBox(&entities, 0.5, 2, 0.5,0,3,-2);
 	createGround(&entities);
 
 	GLuint programID = LoadShaders( "vertex_shader.glsl", "fragment_shader.glsl" );

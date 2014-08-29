@@ -20,6 +20,7 @@ typedef struct {
 
 	dWorldID physics;
 	dSpaceID collision;
+	dJointGroupID collisionJoints;
 } EntityList;
 
 Box *createBox(EntityList *e, float w, float h, float d, float x, float y, float z);
@@ -33,6 +34,7 @@ void insertEntity(EntityList *e, Box *b);
 Box *getEntity(EntityList *e, int index);
 void deleteEntityList(EntityList *e);
 
+void nearCallback(void *data, dGeomID o1, dGeomID o2);
 void updateBoxes(EntityList *e, float deltaTime);
 
 #endif
